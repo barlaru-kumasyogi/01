@@ -2,22 +2,58 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>対局順決定ツール（3〜6人）</title>
+<title>対局順決定ツール（3～6人）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-  body { font-family: sans-serif; text-align: center; }
-  .name-input { margin: 5px; padding: 5px; width: 200px; }
-  button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    padding: 20px;
+  }
+  h2 {
+    margin-bottom: 10px;
+  }
+  select, button {
+    font-size: 18px;
+    padding: 8px 12px;
+    margin: 10px;
+  }
+  .name-box {
+    margin: 5px auto;
+    width: 80%;
+    max-width: 300px;
+  }
+  .name-box input {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+  }
+  #result-area {
+    margin-top: 20px;
+    font-size: 20px;
+  }
+  .result-item {
+    padding: 10px;
+    margin: 6px auto;
+    width: 80%;
+    max-width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #f9f9f9;
+  }
 </style>
 </head>
+
 <body>
 
-<h2>対局順決定ツール（3〜6人）</h2>
+<h2>対局順決定ツール（3～6人）</h2>
 
 <label>参加人数:
-  <select id="count" onchange="updateInputs()">
+  <select id="count" onchange="renderInputs()">
     <option value="3">3人</option>
-    <option value="4" selected>4人</option>
-    <option value="5">5人</option>
+    <option value="4">4人</option>
+    <option value="5" selected>5人</option>
     <option value="6">6人</option>
   </select>
 </label>
@@ -27,65 +63,51 @@
 <button onclick="decide()">OK</button>
 
 <h3>結果</h3>
-<div id="result"></div>
+<div id="result-area"></div>
 
 <script>
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDtNJymX1gBSCHcLHpjNfU50qZ0xqy9yhE",
-  authDomain: "kumasyogi.firebaseapp.com",
-  databaseURL: "https://kumasyogi-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "kumasyogi",
-  storageBucket: "kumasyogi.firebasestorage.app",
-  messagingSenderId: "299899325001",
-  appId: "1:299899325001:web:278c74952e7d9ab3af8d98"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-function updateInputs() {
+// 入力欄を生成
+function renderInputs() {
   const count = parseInt(document.getElementById("count").value);
-  const container = document.getElementById("inputs");
-  container.innerHTML = "";
+  const area = document.getElementById("inputs");
+  area.innerHTML = "";
 
   for (let i = 0; i < count; i++) {
-    container.innerHTML +=
-      `<div><input class="name-input" id="name${i}" placeholder="名前 ${i+1}"></div>`;
+    area.innerHTML += `
+      <div class="name-box">
+        <input id="name${i}" placeholder="名前 ${i+1}">
+      </div>
+    `;
   }
 }
 
+// ランダム決定
 function decide() {
   const count = parseInt(document.getElementById("count").value);
   let names = [];
 
   for (let i = 0; i < count; i++) {
-    let name = document.getElementById("name" + i).value.trim();
-    if (name === "") name = "参加者" + (i + 1);
-    names.push(name);
+    const v = document.getElementById("name" + i).value.trim();
+    names.push(v === "" ? `参加者${i+1}` : v);
   }
 
-  // シャッフル（Fisher-Yates）
+  // Fisher-Yates シャッフル
   for (let i = names.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [names[i], names[j]] = [names[j], names[i]];
   }
 
-  let html = "";
-  for (let i = 0; i < names.length; i++) {
-    html += (i + 1) + "番： " + names[i] + "<br>";
-  }
-
-  document.getElementById("result").innerHTML = html;
+  // 結果表示
+  const result = document.getElementById("result-area");
+  result.innerHTML = "";
+  names.forEach((n, i) => {
+    result.innerHTML += `<div class="result-item">${i+1} 番目： ${n}</div>`;
+  });
 }
 
-updateInputs();
+// 初期表示
+renderInputs();
 </script>
 
 </body>
 </html>
-
