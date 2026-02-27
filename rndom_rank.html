@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>対局順決定ツール（3〜6人）</title>
+<style>
+  body { font-family: sans-serif; text-align: center; }
+  .name-input { margin: 5px; padding: 5px; width: 200px; }
+  button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<h2>対局順決定ツール（3〜6人）</h2>
+
+<label>参加人数:
+  <select id="count" onchange="updateInputs()">
+    <option value="3">3人</option>
+    <option value="4" selected>4人</option>
+    <option value="5">5人</option>
+    <option value="6">6人</option>
+  </select>
+</label>
+
+<div id="inputs"></div>
+
+<button onclick="decide()">OK</button>
+
+<h3>結果</h3>
+<div id="result"></div>
+
+<script>
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDtNJymX1gBSCHcLHpjNfU50qZ0xqy9yhE",
+  authDomain: "kumasyogi.firebaseapp.com",
+  databaseURL: "https://kumasyogi-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kumasyogi",
+  storageBucket: "kumasyogi.firebasestorage.app",
+  messagingSenderId: "299899325001",
+  appId: "1:299899325001:web:278c74952e7d9ab3af8d98"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+function updateInputs() {
+  const count = parseInt(document.getElementById("count").value);
+  const container = document.getElementById("inputs");
+  container.innerHTML = "";
+
+  for (let i = 0; i < count; i++) {
+    container.innerHTML +=
+      `<div><input class="name-input" id="name${i}" placeholder="名前 ${i+1}"></div>`;
+  }
+}
+
+function decide() {
+  const count = parseInt(document.getElementById("count").value);
+  let names = [];
+
+  for (let i = 0; i < count; i++) {
+    let name = document.getElementById("name" + i).value.trim();
+    if (name === "") name = "参加者" + (i + 1);
+    names.push(name);
+  }
+
+  // シャッフル（Fisher-Yates）
+  for (let i = names.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [names[i], names[j]] = [names[j], names[i]];
+  }
+
+  let html = "";
+  for (let i = 0; i < names.length; i++) {
+    html += (i + 1) + "番： " + names[i] + "<br>";
+  }
+
+  document.getElementById("result").innerHTML = html;
+}
+
+updateInputs();
+</script>
+
+</body>
+</html>
+
