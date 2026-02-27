@@ -89,6 +89,7 @@ function renderInputs(count = 5) {
       </div>
     `;
   }
+  updateEditable();
 }
 
 // ----------------------
@@ -112,4 +113,146 @@ function makeRoom() {
 // 参加者が部屋に入る
 // ----------------------
 function joinRoom() {
-  const hostId = document.getElementById("
+  const hostId = document.getElementById("join-id").value.trim();
+  if (!hostId) return;
+
+  peer = new Peer();
+  peer.on("open", () => {
+    const conn = peer.connect(hostId);
+    conn.on("open", () => {
+      connections = [conn];
+    });
+    conn.on("data", data => handleData(conn, data));
+  });
+}
+
+// ----------------------
+// データ受信
+// ----------------------
+function handleData(conn, data) {
+  if (data.type === "count") {
+    renderInputs(data.value);
+  }
+
+  if (data.type === "names") {
+    document.getElementById("name" + data.index).value = data.value;
+  }
+
+  if (data.type === "claimed") {
+    claimed = data.map;
+    updateEditable();
+  }
+
+  if (data.type === "result") {
+    showResult(data.value);
+  }
+
+  if (data.type === "claim") {
+    if (isHost) hostHandleClaim(conn, data.index);
+  }
+}
+
+// ----------------------
+// 自分の番号を主張
+// ----------------------
+function claimIndex() {
+  if (!connections.length) return;
+
+  myIndex = document.getElementById("my-index").value;
+  if (myIndex === "") return;
+
+  connections[0].send({ type: "claim", index: Number(myIndex) });
+  updateEditable();
+}
+
+// ----------------------
+// ホスト：claim を処理
+// ----------------------
+function hostHandleClaim(conn, index) {
+  claimed[index] = conn.peer;
+  broadcast({ type: "claimed", map: claimed });
+}
+
+// ----------------------
+// 入力欄の編集可否
+// ----------------------
+function updateEditable() {
+  for (let i = 0; i < 6; i++) {
+    const box = document.getElementById("name" + i);
+    if (!box) continue;
+
+    if (isHost) {
+      box.disabled = false;
+    } else {
+      box.disabled = (String(i) !== String(myIndex));
+    }
+  }
+}
+
+// ----------------------
+// 名前入力を送信
+// ----------------------
+function sendName(i) {
+  if (!connections.length) return;
+  const v = document.getElementById("name" + i).value;
+  connections[0].send({ type: "names", index: i, value: v });
+}
+
+// ----------------------
+// ホスト：人数変更
+// ----------------------
+function hostChangeCount() {
+  if (!isHost) return;
+  const count = Number(document.getElementById("count").value);
+  renderInputs(count);
+  broadcast({ type: "count", value: count });
+}
+
+// ----------------------
+// ホスト：結果決定
+// ----------------------
+function hostDecide() {
+  if (!isHost) return;
+
+  const count = Number(document.getElementById("count").value);
+  let names = [];
+
+  for (let i = 0; i < count; i++) {
+    const v = document.getElementById("name" + i).value.trim();
+    names.push(v === "" ? `参加者${i+1}` : v);
+  }
+
+  // シャッフル
+  for (let i = names.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [names[i], names[j]] = [names[j], names[i]];
+  }
+
+  showResult(names);
+  broadcast({ type: "result", value: names });
+}
+
+// ----------------------
+// 結果表示
+// ----------------------
+function showResult(arr) {
+  const area = document.getElementById("result-area");
+  area.innerHTML = "";
+  arr.forEach((n, i) => {
+    area.innerHTML += `<div class="result-item">${i+1} 番目： ${n}</div>`;
+  });
+}
+
+// ----------------------
+// 全員に送信
+// ----------------------
+function broadcast(data) {
+  connections.forEach(c => c.send(data));
+}
+
+// 初期表示
+renderInputs();
+</script>
+
+</body>
+</html>
